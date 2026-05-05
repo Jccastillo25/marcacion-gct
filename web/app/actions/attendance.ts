@@ -268,3 +268,81 @@ export async function deleteAttendanceLog(id: string): Promise<{ success?: boole
   revalidatePath('/reports/attendance')
   return { success: true }
 }
+
+// ─── Leave Requests ───────────────────────────────────────────────────────────
+
+export async function approveLeaveRequest(id: string): Promise<{ success?: boolean, error?: string }> {
+  const perm = await requirePermission('can_manage_leaves')
+  if (!perm.ok) return { error: perm.error }
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  const { error } = await supabase
+    .from('leave_requests')
+    .update({ status: 'approved', approved_by: user?.id, updated_at: new Date().toISOString() })
+    .eq('id', id)
+
+  if (error) return { error: error.message }
+  revalidatePath('/leave')
+  return { success: true }
+}
+
+export async function rejectLeaveRequest(id: string, reason?: string): Promise<{ success?: boolean, error?: string }> {
+  const perm = await requirePermission('can_manage_leaves')
+  if (!perm.ok) return { error: perm.error }
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  const { error } = await supabase
+    .from('leave_requests')
+    .update({
+      status: 'rejected',
+      approved_by: user?.id,
+      rejection_reason: reason || null,
+      updated_at: new Date().toISOString()
+    })
+    .eq('id', id)
+
+  if (error) return { error: error.message }
+  revalidatePath('/leave')
+  return { success: true }
+}
+
+// ─── Time Corrections ─────────────────────────────────────────────────────────
+
+export async function approveTimeCorrection(id: string): Promise<{ success?: boolean, error?: string }> {
+  const perm = await requirePermission('can_approve_corrections')
+  if (!perm.ok) return { error: perm.error }
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  const { error } = await supabase
+    .from('time_corrections')
+    .update({ status: 'approved', reviewed_by: user?.id, reviewed_at: new Date().toISOString() })
+    .eq('id', id)
+
+  if (error) return { error: error.message }
+  revalidatePath('/attendance/corrections')
+  return { success: true }
+}
+
+export async function rejectTimeCorrection(id: string, reason?: string): Promise<{ success?: boolean, error?: string }> {
+  const perm = await requirePermission('can_approve_corrections')
+  if (!perm.ok) return { error: perm.error }
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  const { error } = await supabase
+    .from('time_corrections')
+    .update({
+      status: 'rejected',
+      reviewed_by: user?.id,
+      reviewed_at: new Date().toISOString(),
+      rejection_reason: reason || null
+    })
+    .eq('id', id)
+
+  if (error) return { error: error.message }
+  revalidatePath('/attendance/corrections')
+  return { success: true }
+}

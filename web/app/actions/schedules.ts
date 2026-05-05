@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { resolveShift, resolveShiftInMemory, type ResolvedShift } from '@/lib/shift-resolver'
+import { requirePermission } from '@/lib/auth/require-permission'
 
 export type ActionState = { error: string } | { success: boolean; data?: any } | null
 
@@ -13,6 +14,8 @@ export async function createShiftTemplate(
   _prevState: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
+  const perm = await requirePermission('can_manage_shift_templates')
+  if (!perm.ok) return { error: perm.error }
   const supabase = await createClient()
 
   const name = formData.get('name') as string
@@ -84,6 +87,8 @@ export async function updateShiftTemplate(
   _prevState: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
+  const perm = await requirePermission('can_manage_shift_templates')
+  if (!perm.ok) return { error: perm.error }
   const supabase = await createClient()
 
   const name = formData.get('name') as string
@@ -142,6 +147,8 @@ export async function updateAssignmentShift(
   assignmentId: string,
   shiftTemplateId: string | null
 ) {
+  const perm = await requirePermission('can_manage_schedules')
+  if (!perm.ok) return { error: perm.error }
   const supabase = await createClient()
 
   const { error } = await supabase
@@ -163,6 +170,8 @@ export async function bulkUpdateAssignmentsShift(
   assignmentIds: string[],
   shiftTemplateId: string | null
 ) {
+  const perm = await requirePermission('can_manage_schedules')
+  if (!perm.ok) return { error: perm.error }
   const supabase = await createClient()
 
   const { error } = await supabase
@@ -187,6 +196,8 @@ export async function upsertBranchDefaultShift(
   shiftTemplateId: string | null,
   companyId: string
 ) {
+  const perm = await requirePermission('can_manage_schedules')
+  if (!perm.ok) return { error: perm.error }
   const supabase = await createClient()
 
   if (!shiftTemplateId) {
@@ -222,6 +233,8 @@ export async function createShiftOverride(
   reason: string,
   companyId: string
 ) {
+  const perm = await requirePermission('can_manage_schedules')
+  if (!perm.ok) return { error: perm.error }
   const supabase = await createClient()
 
   const { error } = await supabase.from('employee_shift_overrides').insert({
@@ -243,6 +256,8 @@ export async function createShift(
   _prevState: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
+  const perm = await requirePermission('can_manage_shift_templates')
+  if (!perm.ok) return { error: perm.error }
   const supabase = await createClient()
 
   const name = formData.get('name') as string
@@ -278,6 +293,8 @@ export async function updateShift(
   _prevState: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
+  const perm = await requirePermission('can_manage_shift_templates')
+  if (!perm.ok) return { error: perm.error }
   const supabase = await createClient()
 
   const name = formData.get('name') as string
@@ -313,6 +330,8 @@ export async function updateShift(
 }
 
 export async function deleteShift(id: string): Promise<{ error?: string }> {
+  const perm = await requirePermission('can_manage_shift_templates')
+  if (!perm.ok) return { error: perm.error }
   const supabase = await createClient()
   const { error } = await supabase.from('shifts').delete().eq('id', id)
   if (error) return { error: error.message }
@@ -324,6 +343,8 @@ export async function assignShift(
   _prevState: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
+  const perm = await requirePermission('can_manage_schedules')
+  if (!perm.ok) return { error: perm.error }
   const supabase = await createClient()
 
   const employee_id = formData.get('employee_id') as string

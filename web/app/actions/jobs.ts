@@ -3,6 +3,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
+import { requirePermission } from '@/lib/auth/require-permission'
 
 export type JobActionState = { error: string } | null
 
@@ -10,6 +11,8 @@ export async function createJobPosition(
   _prevState: JobActionState,
   formData: FormData
 ): Promise<JobActionState> {
+  const perm = await requirePermission('can_manage_employees')
+  if (!perm.ok) return { error: perm.error }
   const supabase = await createClient()
 
   const name = formData.get('name') as string
@@ -41,6 +44,8 @@ export async function createJobPosition(
 }
 
 export async function deleteJobPosition(id: string) {
+  const perm = await requirePermission('can_manage_employees')
+  if (!perm.ok) return { error: perm.error }
   const supabase = await createClient()
   const { error } = await supabase.from('job_positions').delete().eq('id', id)
   if (error) return { error: error.message }
@@ -49,6 +54,8 @@ export async function deleteJobPosition(id: string) {
 }
 
 export async function startEmployeeBreak(employeeId: string, breakMins: number = 60): Promise<{ success?: boolean, error?: string }> {
+  const perm = await requirePermission('can_manage_attendance')
+  if (!perm.ok) return { error: perm.error }
   const supabase = await createClient()
 
   const startTime = new Date()
@@ -75,10 +82,12 @@ export async function startEmployeeBreak(employeeId: string, breakMins: number =
 }
 
 export async function endEmployeeBreak(
-  employeeId: string, 
-  logId: string, 
+  employeeId: string,
+  logId: string,
   isCompleteOverride: boolean
 ): Promise<{ success?: boolean, error?: string }> {
+  const perm = await requirePermission('can_manage_attendance')
+  if (!perm.ok) return { error: perm.error }
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 

@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { CorrectionActionButtons } from './actions-client'
 
 type TimeCorrection = {
   id: string
@@ -108,6 +109,7 @@ export default async function CorrectionsPage() {
                   <th className="px-6 py-3 text-xs font-semibold uppercase tracking-wider text-slate-500">Motivo</th>
                   <th className="px-6 py-3 text-xs font-semibold uppercase tracking-wider text-slate-500">Solicitado</th>
                   <th className="px-6 py-3 text-xs font-semibold uppercase tracking-wider text-slate-500">Estado</th>
+                  <th className="px-6 py-3 text-xs font-semibold uppercase tracking-wider text-slate-500">Acciones</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -154,6 +156,9 @@ export default async function CorrectionsPage() {
                         <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${st.cls}`}>
                           {st.label}
                         </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <CorrectionActionButtons id={c.id} status={c.status} />
                       </td>
                     </tr>
                   )

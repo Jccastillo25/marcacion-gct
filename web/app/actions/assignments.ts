@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
+import { requirePermission } from '@/lib/auth/require-permission'
 
 export type ActionState = { error: string } | { success: boolean; data?: any } | null
 
@@ -15,6 +16,8 @@ export async function upsertGlobalSchedules(
   shiftTemplateId: string | null,
   companyId: string
 ): Promise<ActionState> {
+  const perm = await requirePermission('can_manage_schedules')
+  if (!perm.ok) return { error: perm.error }
   const supabase = await createClient()
 
   try {

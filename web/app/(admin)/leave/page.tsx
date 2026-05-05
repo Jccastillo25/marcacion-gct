@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { LeaveActionButtons } from './actions-client'
 
 const statusConfig: Record<string, { label: string; cls: string }> = {
   pending:  { label: 'Pendiente',  cls: 'bg-amber-500/10 text-amber-400 border border-amber-500/20' },
@@ -80,6 +81,7 @@ export default async function LeavePage() {
                   <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Días</th>
                   <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Estado</th>
                   <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Motivo</th>
+                  <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Acciones</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-700/50 text-slate-300">
@@ -108,6 +110,9 @@ export default async function LeavePage() {
                       </td>
                       <td className="px-6 py-4 text-slate-500 max-w-xs truncate text-xs">
                         {req.reason}
+                      </td>
+                      <td className="px-6 py-4">
+                        <LeaveActionButtons id={req.id} status={req.status} />
                       </td>
                     </tr>
                   )

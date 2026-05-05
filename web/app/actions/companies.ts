@@ -3,6 +3,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
+import { requirePermission } from '@/lib/auth/require-permission'
 
 export type ActionState = { error: string } | null
 
@@ -10,6 +11,8 @@ export async function createCompany(
   _prevState: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
+  const perm = await requirePermission('can_manage_company')
+  if (!perm.ok) return { error: perm.error }
   const supabase = await createClient()
 
   const display_name = formData.get('display_name') as string
@@ -73,6 +76,8 @@ export async function updateCompany(
   _prevState: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
+  const perm = await requirePermission('can_manage_company')
+  if (!perm.ok) return { error: perm.error }
   const supabase = await createClient()
 
   const display_name = formData.get('display_name') as string
