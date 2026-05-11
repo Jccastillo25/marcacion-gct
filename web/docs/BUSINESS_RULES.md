@@ -61,4 +61,81 @@ Para cualquier duda sobre qué turno aplica a un empleado, el sistema sigue este
 
 ---
 
-*Actualizado v1.1 — 17 de abril de 2026*
+---
+
+## Gestión de Solicitudes de Permisos/Vacaciones
+
+### 1. Tipos de Permisos
+
+Cada empresa puede definir sus propios tipos de permisos. Se incluyen 5 tipos por defecto:
+
+*   **Vacaciones** (Vacation)
+    - Máximo: 15 días por año
+    - Requiere aprobación: Sí
+    - Color: Verde (#10b981)
+
+*   **Enfermedad** (Sickness)
+    - Máximo: 30 días por año
+    - Requiere aprobación: Sí
+    - Color: Rojo (#ef4444)
+
+*   **Asuntos Personales** (Personal)
+    - Máximo: 3 días por año
+    - Requiere aprobación: Sí
+    - Color: Amarillo (#f59e0b)
+
+*   **Maternidad/Paternidad** (Maternity/Paternity)
+    - Máximo: 30 días por año
+    - Requiere aprobación: Sí
+    - Color: Púrpura (#8b5cf6)
+
+*   **Duelo** (Bereavement)
+    - Máximo: 3 días por año
+    - Requiere aprobación: Sí
+    - Color: Azul (#6366f1)
+
+### 2. Estados de Solicitudes
+
+Una solicitud de permiso transita por los siguientes estados:
+
+```
+Pending → Approved
+       → Rejected
+       → Cancelled
+```
+
+*   **Pending**: Estado inicial, esperando aprobación
+*   **Approved**: Aprobado por un administrador
+*   **Rejected**: Rechazado con motivo (opcional)
+*   **Cancelled**: Cancelado por el empleado o administrador
+
+### 3. Reglas de Creación
+
+*   **Validación de fechas**: No se pueden crear solicitudes para fechas pasadas
+*   **Rango válido**: `start_date <= end_date` (obligatorio)
+*   **Cálculo automático**: El sistema calcula días = `(end_date - start_date) + 1`
+*   **Sin solapamiento**: No se pueden crear dos solicitudes pendientes con mismo tipo y rango
+*   **Propiedad**: Empleados solo pueden crear solicitudes para sí mismos (admins pueden crear para otros)
+
+### 4. Reglas de Aprobación/Rechazo
+
+*   **Permiso requerido**: `can_manage_leaves`
+*   **Roles autorizados**: `admin`, `owner`, `rrhh`
+*   **Registro de auditoría**: Se guarda `approved_by` (profile_id) y `approved_at` (timestamp)
+*   **Motivo de rechazo**: Campo opcional `rejection_reason` para documentar el motivo
+
+### 5. Reglas de Cancelación
+
+*   **Empleados**: Pueden cancelar sus propias solicitudes en estado `pending`
+*   **Administradores**: Pueden cancelar cualquier solicitud
+*   **No retroactivo**: Una solicitud aprobada/rechazada no se puede cancelar
+
+### 6. Validaciones Pendientes (Fase Futura)
+
+*   **Balance de días**: No validar si el empleado tiene días disponibles (requiere tabla `leave_balances`)
+*   **Conflicto con horario**: No validar solapamiento con horario laboral
+*   **Notificaciones**: No enviar emails de aprobación/rechazo (requiere Edge Functions)
+
+---
+
+*Actualizado v1.2 — 8 de mayo de 2026*
