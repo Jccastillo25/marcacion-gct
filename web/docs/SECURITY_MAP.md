@@ -72,6 +72,50 @@ Cuando una política RLS en la tabla `A` consulta la tabla `B`, y la tabla `B` t
 - **Directorio**: Los colaboradores solo son visibles para usuarios con membresía en la misma `company_id`.
 - **Membresías**: Un usuario puede ver su propia membresía por UID, pero solo los Admins/Owners pueden ver el listado completo de la empresa.
 
+## 8. Hardening de Base de Datos (2026-05-08 / 2026-05-11)
+
+Se aplicaron dos sprints de correcciones derivadas del Supabase Security Advisor:
+
+### 8.1 Funciones con acceso `anon` revocado
+
+Las siguientes funciones SECURITY DEFINER **no deben ser accesibles sin autenticación**. Se aplicó `REVOKE EXECUTE FROM anon`:
+
+| Función | Motivo |
+|---------|--------|
+| `generate_employee_pin` / `reveal_employee_pin` / `rotate_employee_pin` / `get_active_employee_pin_ciphertext` | PIN management — solo admin/rrhh |
+| `create_company_with_owner` | Onboarding — solo authenticated |
+| `is_member_of` / `is_company_admin` / `is_company_member` / `has_company_role` / `is_employee_user` | Helpers internos de RLS |
+| `my_companies` / `get_user_companies` / `my_role_in_company` | Contexto de sesión autenticada |
+| `handle_new_user` / `handle_employee_kill_switch` | Triggers internos de Auth |
+| `rpc_monitor_mark_attendance` / `rpc_kiosk_mark_attendance` / `rpc_validate_supervision` / `rpc_create_absence_with_attachment` | RPCs de supervisor/admin |
+| `write_audit_log` | Solo llamado desde funciones internas |
+
+**Funciones que MANTIENEN acceso `anon` intencionalmente** (flujo kiosk sin login):
+- `rpc_mark_attendance_action` — marcación desde dispositivo kiosk
+- `verify_employee_pin` — validación PIN en kiosk
+- `kiosk_clock_event` — evento de entrada/salida en kiosk
+
+### 8.2 Vista `consolidated_attendance_view`
+
+Recreada con `WITH (security_invoker = true)`. Antes ejecutaba con privilegios del owner (`postgres`), efectivamente bypasseando el RLS de las tablas subyacentes. Ahora aplica los permisos del usuario que consulta.
+
+La función dependiente `get_consolidated_attendance(uuid, date, date, uuid)` fue recreada con `search_path = public` correcto.
+
+### 8.3 `employee_pins` RLS
+
+Eliminada la política catch-all `"Admins can manage pins"` con `USING (true)` que permitía a cualquier usuario `authenticated` gestionar PINs de cualquier empresa. Reemplazada por 4 políticas granulares:
+
+- `employee_pins_select_admin` — SELECT acotado a `company_id` + role owner/admin
+- `employee_pins_insert_admin` — INSERT acotado a `company_id` + role owner/admin
+- `employee_pins_update_admin` — UPDATE acotado a `company_id` + role owner/admin
+- `employee_pins_delete_admin` — DELETE acotado a `company_id` + role owner/admin (nueva)
+
+### 8.4 `pgcrypto` en schema `extensions`
+
+Movido de schema `public` a `extensions` (`ALTER EXTENSION pgcrypto SET SCHEMA extensions`). Las funciones `generate_employee_pin` y `reveal_employee_pin` fueron actualizadas con `search_path = public, extensions, pg_catalog` para seguir accediendo a `digest()`, `pgp_sym_encrypt()` y `pgp_sym_decrypt()`.
+
+### 8.5 Pendiente manual (Dashboard Supabase)
+- Activar **Leaked Password Protection** en: Auth → Password Security → "Leaked password protection"
+
 ---
----
-*Última Actualización: 2026-04-17 (Sincronizado con Manifiesto v2.0)*
+*Última Actualización: 2026-05-11 — Sprint 2 Security Hardening completado*

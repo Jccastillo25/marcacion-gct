@@ -6,6 +6,54 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/) y el 
 
 ---
 
+## [0.5.0] — 2026-05-11
+
+### Security — Sprint 2 (Supabase Security Hardening)
+
+#### 🔴 Crítico resuelto
+- **`consolidated_attendance_view`**: Recreada con `security_invoker = true`. Antes ejecutaba con privilegios del owner (`postgres`), bypasseando RLS de las tablas subyacentes. La función dependiente `get_consolidated_attendance()` también fue recreada con `search_path` correcto.
+- **`employee_pins` RLS**: Eliminada política `"Admins can manage pins"` con `USING (true)` que permitía a cualquier usuario autenticado gestionar PINs de cualquier empresa. Reemplazada por 4 políticas granulares (SELECT/INSERT/UPDATE/DELETE) acotadas a `company_id` + `role IN (owner, admin)`.
+
+#### 🟡 Medio resuelto
+- **`generate_employee_pin` / `reveal_employee_pin`**: `search_path` actualizado a `public, extensions, pg_catalog` para referenciar pgcrypto en su nuevo schema. `REVOKE EXECUTE FROM anon` aplicado.
+- **`create_company_with_owner`**: `REVOKE EXECUTE FROM anon` aplicado. Mantiene EXECUTE para `authenticated` (requerido para onboarding).
+
+#### 🟢 Bajo resuelto
+- **`pgcrypto`**: Movido de schema `public` a schema `extensions` (`ALTER EXTENSION pgcrypto SET SCHEMA extensions`).
+- **REVOKE anon masivo**: Revocado EXECUTE de `anon` en 19 funciones internas (PIN, membresías, helpers, audit log, RPCs de supervisor). Funciones del kiosk (`rpc_mark_attendance_action`, `verify_employee_pin`, `kiosk_clock_event`) mantienen acceso `anon` intencionalmente (flujo sin autenticación).
+
+### Added — Módulo Solicitudes de Ausencia
+- Tablas `leave_types` y `leave_requests` con RLS correcta (miembros ven, admins gestionan, empleados crean sus propias).
+- 5 tipos de ausencia sembrados por defecto: Vacaciones, Enfermedad, Asuntos Personales, Maternidad/Paternidad, Duelo.
+- Constraint UNIQUE `(company_id, name)` en `leave_types`.
+- Server Actions en `web/app/actions/leaves.ts` con `requirePermission()` en cada acción.
+- Tipos TypeScript en `web/src/types/leave.ts`.
+
+---
+
+## [0.4.0] — 2026-05-08
+
+### Security — Sprint 1 (Supabase Security Hardening)
+
+- **`anon` revocado** en 11 funciones sensibles: `generate_employee_pin`, `reveal_employee_pin`, `rotate_employee_pin`, `get_active_employee_pin_ciphertext`, `write_audit_log`, `create_company_with_owner`, `rpc_monitor_mark_attendance`, `rpc_validate_supervision`, `rpc_create_absence_with_attachment`, `handle_employee_kill_switch`, `handle_new_user`.
+- **`contract_templates` RLS** habilitado. Sin `company_id` — authenticated puede SELECT, service_role gestiona todo.
+- **`search_path` fijo** en 13 RPCs: `rpc_mark_attendance_action`, `rpc_monitor_mark_attendance`, `rpc_kiosk_mark_attendance`, `get_weekly_attendance_counts`, `get_monthly_top_delays`, `get_consolidated_attendance`, `log_attendance_change`, `handle_inss_grace_period`, `check_profile_ssot_integrity`, `rpc_validate_supervision`, `rpc_create_absence_with_attachment`, `handle_new_user`, `handle_employee_kill_switch`.
+
+### Fixed — Bugs críticos (Sprint 1)
+- **Kiosk**: Eliminada query sin `company_id` en `KioskPage` que devolvía branches de todas las empresas. Kiosk ahora requiere `device_code` provisionado en localStorage.
+- **Kiosk Actions**: `requirePermission('can_manage_kiosks')` añadido a `registerKioskDevice`, `updateKioskDevice`, `deleteKioskDevice`, `getKioskDevices`.
+- **Monitor ActionDrawer**: Guards de permiso `can_manage_attendance` en todos los botones de acción.
+- **Monitor EmployeeCard**: Guards de permiso en `handleNotify()` y `handleStartBreak()` antes de llamadas RPC.
+- **Reports**: `requirePermission('can_view_reports')` en página de reportes; `.eq('company_id', companyId)` añadido a queries de incidents.
+- **Dashboard**: `requirePermission('can_view_kpis_attendance')` guard.
+
+### Added — Reportes Avanzados (Sprint 1)
+- Filtros de rango de fechas + sucursal en reportes.
+- Botones de export Excel (xlsx) y PDF (jspdf).
+- Vista "Resumen Mensual" con export por empleado.
+
+---
+
 ## [0.3.0] — 2026-04-11
 
 ### Added
