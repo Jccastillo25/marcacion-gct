@@ -5,6 +5,7 @@ import { resolveShift } from '@/lib/shift-resolver'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getNicaTimeParts } from '@/lib/date-utils'
 import { revalidatePath } from 'next/cache'
+import { requirePermission } from '@/lib/auth/require-permission'
 import { KioskDevice, EventType, KioskResult } from '../types/kiosk'
 
 export async function getKioskByDeviceCode(code: string): Promise<{ data: KioskDevice | null; error: string | null }> {
@@ -58,11 +59,15 @@ export async function getKioskByDeviceCode(code: string): Promise<{ data: KioskD
 }
 
 export async function registerKioskDevice(
-  branchId: string, 
-  name: string, 
-  location?: string, 
+  branchId: string,
+  name: string,
+  location?: string,
   notes?: string
 ) {
+  // Require kiosk management permission
+  const permCheck = await requirePermission('can_manage_kiosks')
+  if (!permCheck.ok) return { error: permCheck.error }
+
   const supabase = await createClient()
 
   // 1. Fetch branch and company info for code generation
@@ -136,6 +141,10 @@ export async function updateKioskDevice(
     is_active?: boolean
   }
 ) {
+  // Require kiosk management permission
+  const permCheck = await requirePermission('can_manage_kiosks')
+  if (!permCheck.ok) return { error: permCheck.error }
+
   const supabase = await createClient()
 
   const { error } = await supabase
@@ -150,6 +159,10 @@ export async function updateKioskDevice(
 }
 
 export async function getKioskDevices() {
+  // Require kiosk management permission
+  const permCheck = await requirePermission('can_manage_kiosks')
+  if (!permCheck.ok) return { data: null, error: permCheck.error }
+
   const supabase = await createClient()
 
   const { data, error } = await supabase
@@ -184,6 +197,10 @@ export async function getKioskDevices() {
 }
 
 export async function deleteKioskDevice(id: string) {
+  // Require kiosk management permission
+  const permCheck = await requirePermission('can_manage_kiosks')
+  if (!permCheck.ok) return { error: permCheck.error }
+
   const supabase = await createClient()
 
   const { error } = await supabase

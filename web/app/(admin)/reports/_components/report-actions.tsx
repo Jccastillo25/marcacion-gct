@@ -2,16 +2,17 @@
 
 import { Printer, Download, Loader2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import { useGlobalContext } from '@/components/context/GlobalContext'
 import { useState } from 'react'
 
 interface ReportActionsProps {
   data?: any[]
   summary?: { total: number; punctual: number; late: number }
-  filters: { 
-    date?: string; 
-    start?: string; 
-    end?: string; 
-    branch?: string; 
+  filters: {
+    date?: string;
+    start?: string;
+    end?: string;
+    branch?: string;
     company_id?: string;
     type?: string;
   }
@@ -20,7 +21,13 @@ interface ReportActionsProps {
 
 export function ReportActions({ data, summary, filters, canExport = false }: ReportActionsProps) {
   const [isGenerating, setIsGenerating] = useState(false)
+  const { userPermissions } = useGlobalContext()
   const supabase = createClient()
+
+  // Verify user has permission to view reports
+  if (!userPermissions['can_view_reports']) {
+    return null
+  }
 
   const generateProfessionalPDF = async () => {
     if (!canExport) return

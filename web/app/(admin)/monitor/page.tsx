@@ -10,7 +10,7 @@ import type { Employee } from '@/components/Monitor/EmployeeCard'
 import { InssAlertWidget } from '@/components/ui/InssAlertWidget'
 
 export default function MonitorPage() {
-  const { companyId, isLoading: isContextLoading, userRole } = useGlobalContext()
+  const { companyId, isLoading: isContextLoading, userRole, userPermissions } = useGlobalContext()
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null)
   const [isDrawerOpen, setIsDrawerOpen]         = useState(false)
 

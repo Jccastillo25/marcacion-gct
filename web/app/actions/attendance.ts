@@ -5,17 +5,25 @@ import { revalidatePath } from 'next/cache'
 import { requirePermission } from '@/lib/auth/require-permission'
 
 // Time utilities
+/**
+ * TODO (BUG): isWithin15Mins uses UTC Date.now() instead of Nicaragua timezone (UTC-6)
+ * This may cause incorrect shift time comparisons for attendance corrections.
+ * SOLUTION: Use getNicaTimeParts() from @/lib/date-utils instead
+ * IMPACT: Attendance corrections may allow/block at wrong times due to timezone mismatch
+ * BLOCKED: This is only called from mark_attendance_action (supervisor corrections)
+ *          Need to verify actual business impact first before fixing
+ */
 const isWithin15Mins = (targetTimeStr: string) => {
   // targetTimeStr is like "07:30"
   const now = new Date()
   const [hours, minutes] = targetTimeStr.split(':').map(Number)
-  
+
   const targetTime = new Date()
   targetTime.setHours(hours, minutes, 0, 0)
-  
+
   const diffMins = (targetTime.getTime() - now.getTime()) / 60000
-  
-  // They can clock in up to 15 mins early. 
+
+  // They can clock in up to 15 mins early.
   // It's safe to clock in if we are at most 15 mins before the shift starts.
   // Example: Shift = 07:30. Now = 07:15. Diff = +15 mins -> allow.
   // Now = 07:10. Diff = +20 mins -> block.

@@ -1,19 +1,20 @@
 import { createClient } from '@/lib/supabase/server'
+import { requirePermission } from '@/lib/security'
 import Link from 'next/link'
 import { AttendanceChart } from './_components/attendance-chart'
 import { TopDelaysChart } from './_components/top-delays-chart'
 import { AttendanceDonut } from './_components/attendance-donut'
 import { ComplianceWidget } from '@/components/Dashboard/ComplianceWidget'
 import { DashboardNotifications } from './_components/dashboard-notifications'
-import { 
-  Users, 
-  Clock, 
-  AlertTriangle, 
-  Calendar, 
-  Check, 
-  X, 
-  ArrowUpRight, 
-  ArrowDownRight, 
+import {
+  Users,
+  Clock,
+  AlertTriangle,
+  Calendar,
+  Check,
+  X,
+  ArrowUpRight,
+  ArrowDownRight,
   Bell,
   Search,
   ChevronRight,
@@ -31,6 +32,19 @@ export default async function DashboardPage({
 }: {
   searchParams: Promise<{ company_id?: string }>
 }) {
+  // Verify permission to view any KPI
+  const { companyId: authCompanyId, error: permError } = await requirePermission('can_view_kpis_attendance')
+  if (permError) {
+    return (
+      <div className="space-y-6 pt-4">
+        <div className="p-6 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400">
+          <p className="font-bold">Acceso denegado</p>
+          <p className="text-sm mt-2">{permError}</p>
+        </div>
+      </div>
+    )
+  }
+
   const supabase = await createClient()
   const params = await searchParams
   const company_id = params.company_id

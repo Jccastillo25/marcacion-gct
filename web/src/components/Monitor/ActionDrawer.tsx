@@ -7,6 +7,7 @@ import { EmployeeStatusBadge } from './EmployeeStatusBadge'
 import { createClient } from '@/lib/supabase/client'
 import { getNicaISODate, getNicaRange } from '@/lib/date-utils'
 import { registerAbsence } from '../../../app/actions/attendance'
+import { useGlobalContext } from '@/context/GlobalContext'
 
 interface Props {
   employee: any | null
@@ -38,6 +39,7 @@ export const ActionDrawer = ({ employee, isOpen, onClose }: Props) => {
   const [localStatus, setLocalStatus]     = useState<string>(employee?.current_status ?? 'offline')
   const [hasHadBreak, setHasHadBreak]     = useState(false)
   const supabase = createClient()
+  const { userPermissions } = useGlobalContext()
 
   // Sincroniza cuando el prop cambia (realtime del padre)
   useEffect(() => {
@@ -221,90 +223,103 @@ export const ActionDrawer = ({ employee, isOpen, onClose }: Props) => {
               </div>
             </div>
 
-            {/* Botones de marcación */}
-            <div className="grid grid-cols-2 gap-3">
-              <ActionButton
-                label="Entrada"
-                icon="▶"
-                colorClass="bg-emerald-500 hover:bg-emerald-600 shadow-lg shadow-emerald-500/20"
-                onClick={() => handleAction('CLOCK_IN')}
-                loading={loadingAction === 'CLOCK_IN'}
-                disabled={!canClockIn || loadingAction !== null}
-              />
-              <ActionButton
-                label="Descanso"
-                icon="☕"
-                colorClass="bg-amber-500 hover:bg-amber-600 shadow-lg shadow-amber-500/20"
-                onClick={() => handleAction('START_BREAK')}
-                loading={loadingAction === 'START_BREAK'}
-                disabled={!canStartBreak || loadingAction !== null}
-              />
-              <ActionButton
-                label="Reanudar"
-                icon="↩"
-                colorClass="bg-blue-500 hover:bg-blue-600 shadow-lg shadow-blue-500/20"
-                onClick={() => handleAction('END_BREAK')}
-                loading={loadingAction === 'END_BREAK'}
-                disabled={!canEndBreak || loadingAction !== null}
-              />
-              <ActionButton
-                label="Salida"
-                icon="⏹"
-                colorClass="bg-slate-700 hover:bg-slate-600 border border-slate-600"
-                onClick={() => handleAction('CLOCK_OUT')}
-                loading={loadingAction === 'CLOCK_OUT'}
-                disabled={!canClockOut || loadingAction !== null}
-              />
-            </div>
-
-            {/* Separador */}
-            <div className="flex items-center gap-3">
-              <div className="flex-1 h-px" style={{ background: 'var(--border-soft)' }} />
-              <div className="flex items-center gap-1.5">
-                <AlertCircle size={13} style={{ color: 'var(--primary)' }} />
-                <span className="text-[10px] font-black uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>Incidencias / Notas</span>
+            {/* Botones de marcación - Solo visible con permiso */}
+            {userPermissions['can_manage_attendance'] ? (
+              <div className="grid grid-cols-2 gap-3">
+                <ActionButton
+                  label="Entrada"
+                  icon="▶"
+                  colorClass="bg-emerald-500 hover:bg-emerald-600 shadow-lg shadow-emerald-500/20"
+                  onClick={() => handleAction('CLOCK_IN')}
+                  loading={loadingAction === 'CLOCK_IN'}
+                  disabled={!canClockIn || loadingAction !== null}
+                />
+                <ActionButton
+                  label="Descanso"
+                  icon="☕"
+                  colorClass="bg-amber-500 hover:bg-amber-600 shadow-lg shadow-amber-500/20"
+                  onClick={() => handleAction('START_BREAK')}
+                  loading={loadingAction === 'START_BREAK'}
+                  disabled={!canStartBreak || loadingAction !== null}
+                />
+                <ActionButton
+                  label="Reanudar"
+                  icon="↩"
+                  colorClass="bg-blue-500 hover:bg-blue-600 shadow-lg shadow-blue-500/20"
+                  onClick={() => handleAction('END_BREAK')}
+                  loading={loadingAction === 'END_BREAK'}
+                  disabled={!canEndBreak || loadingAction !== null}
+                />
+                <ActionButton
+                  label="Salida"
+                  icon="⏹"
+                  colorClass="bg-slate-700 hover:bg-slate-600 border border-slate-600"
+                  onClick={() => handleAction('CLOCK_OUT')}
+                  loading={loadingAction === 'CLOCK_OUT'}
+                  disabled={!canClockOut || loadingAction !== null}
+                />
               </div>
-              <div className="flex-1 h-px" style={{ background: 'var(--border-soft)' }} />
-            </div>
-
-            {/* Formulario de incidencia */}
-            <div className="space-y-3">
-              <select
-                value={incidentType}
-                onChange={e => setIncidentType(e.target.value)}
-                className="input-dark h-11 w-full px-4 text-sm"
-              >
-                <option value="nota">Nota de Supervisión</option>
-                <option value="permiso">Permiso Especial</option>
-                <option value="ausencia">Ausencia Justificada</option>
-                <option value="justificante">Carga de Justificante</option>
-              </select>
-
-              <textarea
-                value={notes}
-                onChange={e => setNotes(e.target.value)}
-                placeholder="Escribe el motivo o nota aquí..."
-                rows={4}
-                className="input-dark w-full p-4 text-sm resize-none"
-              />
-
-              <div className="flex gap-2">
-                <button className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-dashed p-3.5 text-[11px] font-black uppercase tracking-widest transition"
-                  style={{ borderColor: 'var(--border-soft)', color: 'var(--text-light)' }}
-                  onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--primary)'; e.currentTarget.style.color = 'var(--primary)' }}
-                  onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border-soft)'; e.currentTarget.style.color = 'var(--text-light)' }}
-                >
-                  <Camera size={15} /> Foto
-                </button>
-                <button className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-dashed p-3.5 text-[11px] font-black uppercase tracking-widest transition"
-                  style={{ borderColor: 'var(--border-soft)', color: 'var(--text-light)' }}
-                  onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--primary)'; e.currentTarget.style.color = 'var(--primary)' }}
-                  onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border-soft)'; e.currentTarget.style.color = 'var(--text-light)' }}
-                >
-                  <FileText size={15} /> PDF
-                </button>
+            ) : (
+              <div className="rounded-xl p-4 flex items-center gap-3" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-soft)' }}>
+                <AlertCircle size={16} style={{ color: 'var(--danger)' }} />
+                <p className="text-sm font-medium" style={{ color: 'var(--text-muted)' }}>
+                  No tienes permisos para marcar asistencia
+                </p>
               </div>
-            </div>
+            )}
+
+            {/* Separador - Solo si tiene permiso para gestionar asistencia */}
+            {userPermissions['can_manage_attendance'] && (
+              <div className="flex items-center gap-3">
+                <div className="flex-1 h-px" style={{ background: 'var(--border-soft)' }} />
+                <div className="flex items-center gap-1.5">
+                  <AlertCircle size={13} style={{ color: 'var(--primary)' }} />
+                  <span className="text-[10px] font-black uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>Incidencias / Notas</span>
+                </div>
+                <div className="flex-1 h-px" style={{ background: 'var(--border-soft)' }} />
+              </div>
+            )}
+
+            {/* Formulario de incidencia - Solo si tiene permiso para gestionar asistencia */}
+            {userPermissions['can_manage_attendance'] && (
+              <div className="space-y-3">
+                <select
+                  value={incidentType}
+                  onChange={e => setIncidentType(e.target.value)}
+                  className="input-dark h-11 w-full px-4 text-sm"
+                >
+                  <option value="nota">Nota de Supervisión</option>
+                  <option value="permiso">Permiso Especial</option>
+                  <option value="ausencia">Ausencia Justificada</option>
+                  <option value="justificante">Carga de Justificante</option>
+                </select>
+
+                <textarea
+                  value={notes}
+                  onChange={e => setNotes(e.target.value)}
+                  placeholder="Escribe el motivo o nota aquí..."
+                  rows={4}
+                  className="input-dark w-full p-4 text-sm resize-none"
+                />
+
+                <div className="flex gap-2">
+                  <button className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-dashed p-3.5 text-[11px] font-black uppercase tracking-widest transition"
+                    style={{ borderColor: 'var(--border-soft)', color: 'var(--text-light)' }}
+                    onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--primary)'; e.currentTarget.style.color = 'var(--primary)' }}
+                    onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border-soft)'; e.currentTarget.style.color = 'var(--text-light)' }}
+                  >
+                    <Camera size={15} /> Foto
+                  </button>
+                  <button className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-dashed p-3.5 text-[11px] font-black uppercase tracking-widest transition"
+                    style={{ borderColor: 'var(--border-soft)', color: 'var(--text-light)' }}
+                    onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--primary)'; e.currentTarget.style.color = 'var(--primary)' }}
+                    onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border-soft)'; e.currentTarget.style.color = 'var(--text-light)' }}
+                  >
+                    <FileText size={15} /> PDF
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Footer */}
@@ -316,14 +331,16 @@ export const ActionDrawer = ({ employee, isOpen, onClose }: Props) => {
             >
               Cerrar
             </button>
-            <button
-              disabled={loadingAction !== null || !notes.trim()}
-              onClick={handleSaveNote}
-              className="flex-1 rounded-xl px-4 py-3 text-[11px] font-black uppercase tracking-widest text-white transition-all disabled:opacity-40"
-              style={{ background: 'var(--primary)', boxShadow: '0 0 20px var(--primary-soft)' }}
-            >
-              {loadingAction === 'NOTE' ? '...' : 'Guardar Nota'}
-            </button>
+            {userPermissions['can_manage_attendance'] && (
+              <button
+                disabled={loadingAction !== null || !notes.trim()}
+                onClick={handleSaveNote}
+                className="flex-1 rounded-xl px-4 py-3 text-[11px] font-black uppercase tracking-widest text-white transition-all disabled:opacity-40"
+                style={{ background: 'var(--primary)', boxShadow: '0 0 20px var(--primary-soft)' }}
+              >
+                {loadingAction === 'NOTE' ? '...' : 'Guardar Nota'}
+              </button>
+            )}
           </div>
         </div>
       </div>

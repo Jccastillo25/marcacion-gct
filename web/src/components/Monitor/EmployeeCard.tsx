@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react'
 import { AlertTriangle, Bell } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import { useGlobalContext } from '@/context/GlobalContext'
 
 export interface Employee {
   id: string
@@ -65,6 +66,7 @@ export const EmployeeCard = ({ employee, onOpenDrawer }: Props) => {
   const [elapsedMs, setElapsedMs] = useState(0)
   const [notifying, setNotifying] = useState(false)
   const supabase = createClient()
+  const { userPermissions } = useGlobalContext()
 
   const shiftMs  = (employee.shift_hours   ?? 8)  * 3_600_000
   const breakMs  = (employee.break_minutes ?? 60) * 60_000
@@ -118,6 +120,10 @@ export const EmployeeCard = ({ employee, onOpenDrawer }: Props) => {
   }
 
   async function handleNotify() {
+    if (!userPermissions['can_manage_attendance']) {
+      console.warn('No tienes permiso para marcar asistencia')
+      return
+    }
     setNotifying(true)
     await supabase.rpc('rpc_mark_attendance_action', {
       p_company_id: employee.company_id,
@@ -130,6 +136,10 @@ export const EmployeeCard = ({ employee, onOpenDrawer }: Props) => {
   }
 
   async function handleStartBreak() {
+    if (!userPermissions['can_manage_attendance']) {
+      console.warn('No tienes permiso para marcar asistencia')
+      return
+    }
     await supabase.rpc('rpc_mark_attendance_action', {
       p_company_id: employee.company_id,
       p_employee_id: employee.id,
@@ -276,42 +286,65 @@ export const EmployeeCard = ({ employee, onOpenDrawer }: Props) => {
       <div style={{ display: 'flex', gap: 8 }} onClick={e => e.stopPropagation()}>
         {breakExceeded ? (
           <>
-            <button
-              onClick={handleNotify}
-              disabled={notifying}
-              style={{ flex: 1, height: 36, borderRadius: 12, border: '1.5px solid #ef4444', background: 'transparent', color: '#ef4444', fontSize: 10, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.1em', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, opacity: notifying ? 0.6 : 1 }}
-            >
-              <Bell size={13} />
-              NOTIFICAR
-            </button>
-            <button
-              onClick={() => onOpenDrawer(employee)}
-              style={{ width: 36, height: 36, borderRadius: 12, border: '1px solid rgba(255,255,255,0.1)', background: 'var(--bg-elevated)', color: 'var(--text-muted)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}
-            >
-              ···
-            </button>
+            {userPermissions['can_manage_attendance'] ? (
+              <>
+                <button
+                  onClick={handleNotify}
+                  disabled={notifying}
+                  style={{ flex: 1, height: 36, borderRadius: 12, border: '1.5px solid #ef4444', background: 'transparent', color: '#ef4444', fontSize: 10, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.1em', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, opacity: notifying ? 0.6 : 1 }}
+                >
+                  <Bell size={13} />
+                  NOTIFICAR
+                </button>
+                <button
+                  onClick={() => onOpenDrawer(employee)}
+                  style={{ width: 36, height: 36, borderRadius: 12, border: '1px solid rgba(255,255,255,0.1)', background: 'var(--bg-elevated)', color: 'var(--text-muted)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}
+                >
+                  ···
+                </button>
+              </>
+            ) : (
+              <button
+                onClick={() => onOpenDrawer(employee)}
+                style={{ flex: 1, height: 36, borderRadius: 12, border: '1px solid rgba(239,68,68,0.2)', background: 'rgba(239,68,68,0.08)', color: '#ef4444', fontSize: 10, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.08em', cursor: 'pointer' }}
+              >
+                Panel Acción
+              </button>
+            )}
           </>
         ) : isOffline ? (
           <button
             onClick={() => onOpenDrawer(employee)}
-            style={{ flex: 1, height: 36, borderRadius: 12, border: 'none', background: 'linear-gradient(135deg,#0891b2,#0d7ff2)', color: '#fff', fontSize: 10, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.1em', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
+            style={{ flex: 1, height: 36, borderRadius: 12, border: 'none', background: 'linear-gradient(135deg,#0891b2,#0d7ff2)', color: '#fff', fontSize: 10, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.1em', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, opacity: userPermissions['can_manage_attendance'] ? 1 : 0.5 }}
+            disabled={!userPermissions['can_manage_attendance']}
           >
             ▶ Registrar Entrada
           </button>
         ) : isActive ? (
           <>
-            <button
-              onClick={handleStartBreak}
-              style={{ flex: 1, height: 36, borderRadius: 12, border: '1px solid rgba(245,158,11,0.3)', background: 'rgba(245,158,11,0.15)', color: '#f59e0b', fontSize: 10, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.08em', cursor: 'pointer' } as React.CSSProperties}
-            >
-              ☕ Iniciar Descanso
-            </button>
-            <button
-              onClick={() => onOpenDrawer(employee)}
-              style={{ width: 36, height: 36, borderRadius: 12, border: '1px solid rgba(255,255,255,0.1)', background: 'var(--bg-elevated)', color: 'var(--text-muted)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}
-            >
-              ···
-            </button>
+            {userPermissions['can_manage_attendance'] ? (
+              <>
+                <button
+                  onClick={handleStartBreak}
+                  style={{ flex: 1, height: 36, borderRadius: 12, border: '1px solid rgba(245,158,11,0.3)', background: 'rgba(245,158,11,0.15)', color: '#f59e0b', fontSize: 10, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.08em', cursor: 'pointer' } as React.CSSProperties}
+                >
+                  ☕ Iniciar Descanso
+                </button>
+                <button
+                  onClick={() => onOpenDrawer(employee)}
+                  style={{ width: 36, height: 36, borderRadius: 12, border: '1px solid rgba(255,255,255,0.1)', background: 'var(--bg-elevated)', color: 'var(--text-muted)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}
+                >
+                  ···
+                </button>
+              </>
+            ) : (
+              <button
+                onClick={() => onOpenDrawer(employee)}
+                style={{ flex: 1, height: 36, borderRadius: 12, border: '1px solid rgba(16,185,129,0.2)', background: 'rgba(16,185,129,0.08)', color: '#10b981', fontSize: 10, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.08em', cursor: 'pointer' }}
+              >
+                Ver Detalles
+              </button>
+            )}
           </>
         ) : isBreak ? (
           <button

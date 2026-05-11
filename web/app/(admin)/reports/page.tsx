@@ -1,9 +1,10 @@
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
-import { createAdminClient } from '@/lib/supabase/admin'
+import { requirePermission } from '@/lib/security'
 import { AttendanceView } from './_views/attendance-view'
 import { HoursView } from './_views/hours-view'
 import { IncidentsView } from './_views/incidents-view'
+import { MonthlySummaryView } from './_views/monthly-summary-view'
 
 interface ReportsHubProps {
   searchParams: Promise<{
@@ -20,27 +21,24 @@ const TABS = [
   { id: 'hours', label: 'Horas Trabajadas', default: true },
   { id: 'attendance', label: 'Asistencia Diaria' },
   { id: 'incidents', label: 'Tardanzas y Ausencias' },
+  { id: 'monthly-summary', label: 'Resumen Mensual' },
 ]
 
 export default async function ReportsHubPage({ searchParams }: ReportsHubProps) {
   const params = await searchParams
   const activeTab = params.type || 'hours'
 
-  // Resolve caller's company_id server-side so views can enforce tenant isolation
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-
-  let companyId = ''
-  if (user) {
-    const adminClient = createAdminClient()
-    const { data: membership } = await adminClient
-      .from('company_memberships')
-      .select('company_id')
-      .eq('user_id', user.id)
-      .eq('is_active', true)
-      .limit(1)
-      .single()
-    companyId = membership?.company_id ?? ''
+  // Verify permission to view reports
+  const { companyId, error: permError } = await requirePermission('can_view_reports')
+  if (permError) {
+    return (
+      <div className="space-y-6">
+        <div className="p-6 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400">
+          <p className="font-bold">Acceso denegado</p>
+          <p className="text-sm mt-2">{permError}</p>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -82,6 +80,9 @@ export default async function ReportsHubPage({ searchParams }: ReportsHubProps) 
         )}
         {activeTab === 'incidents' && (
           <IncidentsView companyId={companyId} start={params.start} end={params.end} employee={params.employee} />
+        )}
+        {activeTab === 'monthly-summary' && (
+          <MonthlySummaryView companyId={companyId} />
         )}
       </div>
     </div>

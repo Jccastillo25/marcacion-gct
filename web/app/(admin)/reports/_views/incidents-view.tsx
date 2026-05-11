@@ -25,11 +25,12 @@ export function IncidentsView({ companyId = '', start, end, employee }: Incident
 
   async function fetchData() {
     setLoading(true)
-    
+
     // We use consolidated view to see tardiness as well
     let query = supabase
       .from('consolidated_attendance_view')
       .select('*')
+      .eq('company_id', companyId)
       .gt('late_minutes', 0)
       .gte('attendance_date', filterStart)
       .lte('attendance_date', filterEnd)
@@ -39,7 +40,7 @@ export function IncidentsView({ companyId = '', start, end, employee }: Incident
     }
 
     const { data: recordsData } = await query
-    const { data: empData } = await supabase.from('employees').select('id, first_name, last_name').order('first_name')
+    const { data: empData } = await supabase.from('employees').select('id, first_name, last_name').eq('company_id', companyId).order('first_name')
 
     setIncidents(recordsData || [])
     setEmployees(empData || [])
