@@ -7,9 +7,13 @@ Este documento registra los cambios que necesitan aplicarse a la base de datos d
 
 ## FASE 2B: Sistema de Solicitudes de Permisos/Vacaciones
 
-### Estado: LISTO PARA MIGRAR
+### Estado: APLICADO (2026-05-11)
 
-**Archivo de migración**: `web/db/migrations/20260508_leave_requests_system.sql`
+**Aplicado vía**: migración remota `20260511213114_leave_requests_system_reconcile_v2` en Supabase `ofeuzkwjhmfsazqfyutu`.
+
+Verificado: `leave_types` (6 filas seed), `leave_requests` (1 fila), 11 RLS policies activas (cobertura admin + employee).
+
+**Archivo de migración local (referencia)**: `web/db/migrations/20260508_leave_requests_system.sql`
 
 **Cambios**:
 
