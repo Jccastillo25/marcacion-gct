@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import { approveLeaveRequest, rejectLeaveRequest, cancelLeaveRequest } from '@/app/actions/leaves'
+import { approveLeaveRequest, rejectLeaveRequest, cancelLeaveRequest } from '../../actions/leaves'
 
 interface LeaveActionButtonsProps {
   id: string

@@ -8,7 +8,7 @@ import {
   LeaveRequest,
   LeaveType,
   LeaveRequestFilters,
-} from '@/src/types/leave'
+} from '@/types/leave'
 
 type ActionState = { error: string } | null
 
@@ -17,8 +17,9 @@ type ActionState = { error: string } | null
  * Visible to all authenticated users in the company
  */
 export async function getLeaveTypes(): Promise<LeaveType[] | null> {
-  const { companyId, error: permError } = await requirePermission('can_view_attendance')
-  if (permError) return null
+  const __perm = await requirePermission('can_view_attendance')
+  if (!__perm.ok) return null
+  const companyId = __perm.companyId
 
   const supabase = await createClient()
 
@@ -44,8 +45,9 @@ export async function getLeaveTypes(): Promise<LeaveType[] | null> {
 export async function createLeaveRequest(
   input: CreateLeaveRequestInput
 ): Promise<ActionState> {
-  const { companyId, error: permError } = await requirePermission('can_view_attendance')
-  if (permError) return { error: permError }
+  const __perm = await requirePermission('can_view_attendance')
+  if (!__perm.ok) return { error: __perm.error }
+  const companyId = __perm.companyId
 
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -126,8 +128,9 @@ export async function createLeaveRequest(
 export async function getLeaveRequests(
   filters?: LeaveRequestFilters
 ): Promise<LeaveRequest[] | null> {
-  const { companyId, error: permError } = await requirePermission('can_view_attendance')
-  if (permError) return null
+  const __perm = await requirePermission('can_view_attendance')
+  if (!__perm.ok) return null
+  const companyId = __perm.companyId
 
   const supabase = await createClient()
 
@@ -182,15 +185,16 @@ export async function getLeaveRequests(
     return null
   }
 
-  return data as LeaveRequest[]
+  return data as unknown as LeaveRequest[]
 }
 
 /**
  * Get my own leave requests (any authenticated user)
  */
 export async function getMyLeaveRequests(): Promise<LeaveRequest[] | null> {
-  const { companyId, error: permError } = await requirePermission('can_view_attendance')
-  if (permError) return null
+  const __perm = await requirePermission('can_view_attendance')
+  if (!__perm.ok) return null
+  const companyId = __perm.companyId
 
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -225,15 +229,16 @@ export async function getMyLeaveRequests(): Promise<LeaveRequest[] | null> {
     return null
   }
 
-  return data as LeaveRequest[]
+  return data as unknown as LeaveRequest[]
 }
 
 /**
  * Approve a leave request (admin only)
  */
 export async function approveLeaveRequest(id: string): Promise<ActionState> {
-  const { companyId, error: permError } = await requirePermission('can_manage_leaves')
-  if (permError) return { error: permError }
+  const __perm = await requirePermission('can_manage_leaves')
+  if (!__perm.ok) return { error: __perm.error }
+  const companyId = __perm.companyId
 
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -269,8 +274,9 @@ export async function approveLeaveRequest(id: string): Promise<ActionState> {
  * Reject a leave request (admin only)
  */
 export async function rejectLeaveRequest(id: string, reason?: string): Promise<ActionState> {
-  const { companyId, error: permError } = await requirePermission('can_manage_leaves')
-  if (permError) return { error: permError }
+  const __perm = await requirePermission('can_manage_leaves')
+  if (!__perm.ok) return { error: __perm.error }
+  const companyId = __perm.companyId
 
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -306,8 +312,9 @@ export async function rejectLeaveRequest(id: string, reason?: string): Promise<A
  * Cancel a leave request (employee can cancel their own, admin can cancel any)
  */
 export async function cancelLeaveRequest(id: string): Promise<ActionState> {
-  const { companyId, error: permError } = await requirePermission('can_view_attendance')
-  if (permError) return { error: permError }
+  const __perm = await requirePermission('can_view_attendance')
+  if (!__perm.ok) return { error: __perm.error }
+  const companyId = __perm.companyId
 
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()

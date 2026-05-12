@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
-import { requirePermission } from '@/lib/security'
+import { requirePermission } from '@/lib/auth/require-permission'
 import Link from 'next/link'
 import { AttendanceChart } from './_components/attendance-chart'
 import { TopDelaysChart } from './_components/top-delays-chart'
@@ -33,17 +33,19 @@ export default async function DashboardPage({
   searchParams: Promise<{ company_id?: string }>
 }) {
   // Verify permission to view any KPI
-  const { companyId: authCompanyId, error: permError } = await requirePermission('can_view_kpis_attendance')
-  if (permError) {
+  const permResult = await requirePermission('can_view_kpis_attendance')
+  if (!permResult.ok) {
     return (
       <div className="space-y-6 pt-4">
         <div className="p-6 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400">
           <p className="font-bold">Acceso denegado</p>
-          <p className="text-sm mt-2">{permError}</p>
+          <p className="text-sm mt-2">{permResult.error}</p>
         </div>
       </div>
     )
   }
+  const authCompanyId = permResult.companyId
+  void authCompanyId
 
   const supabase = await createClient()
   const params = await searchParams

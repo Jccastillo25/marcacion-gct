@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
-import { requirePermission } from '@/lib/security'
+import { requirePermission } from '@/lib/auth/require-permission'
 import { AttendanceView } from './_views/attendance-view'
 import { HoursView } from './_views/hours-view'
 import { IncidentsView } from './_views/incidents-view'
@@ -29,17 +29,18 @@ export default async function ReportsHubPage({ searchParams }: ReportsHubProps) 
   const activeTab = params.type || 'hours'
 
   // Verify permission to view reports
-  const { companyId, error: permError } = await requirePermission('can_view_reports')
-  if (permError) {
+  const permResult = await requirePermission('can_view_reports')
+  if (!permResult.ok) {
     return (
       <div className="space-y-6">
         <div className="p-6 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400">
           <p className="font-bold">Acceso denegado</p>
-          <p className="text-sm mt-2">{permError}</p>
+          <p className="text-sm mt-2">{permResult.error}</p>
         </div>
       </div>
     )
   }
+  const companyId = permResult.companyId
 
   return (
     <div className="space-y-6">

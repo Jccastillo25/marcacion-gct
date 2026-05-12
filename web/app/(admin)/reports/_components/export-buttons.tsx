@@ -1,6 +1,6 @@
 'use client'
 
-import { useGlobalContext } from '@/components/context/GlobalContext'
+import { useGlobalContext } from '@/context/GlobalContext'
 import { Download, Loader2 } from 'lucide-react'
 import { useState } from 'react'
 
@@ -55,7 +55,7 @@ export function ExportButtons({ data, filename, columns }: ExportButtonsProps) {
     try {
       // Importa dinámicamente jspdf
       const { jsPDF } = await import('jspdf')
-      const autoTable = await import('jspdf-autotable')
+      const autoTable = (await import('jspdf-autotable')).default
 
       const doc = new jsPDF()
 

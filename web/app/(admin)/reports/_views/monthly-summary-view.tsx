@@ -141,7 +141,7 @@ export function MonthlySummaryView({ companyId }: MonthlySummaryViewProps) {
         </div>
         <div className="flex flex-col items-end gap-3 shrink-0">
           <ExportButtons
-            data={records}
+            data={records as unknown as Record<string, unknown>[]}
             filename="Resumen_Mensual"
             columns={exportColumns}
           />

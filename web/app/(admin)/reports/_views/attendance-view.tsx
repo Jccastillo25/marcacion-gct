@@ -71,8 +71,8 @@ export function AttendanceView({ companyId, date, branch }: AttendanceViewProps)
 
       if (cancelled) return
 
-      setRecords((recordsData as AttendanceRecord[]) || [])
-      setBranches((branchesData as Array<{ id: string; name: string }>) || [])
+      setRecords((recordsData as unknown as AttendanceRecord[]) || [])
+      setBranches((branchesData as unknown as Array<{ id: string; name: string }>) || [])
       setLoading(false)
     }
 

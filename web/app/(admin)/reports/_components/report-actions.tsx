@@ -2,7 +2,7 @@
 
 import { Printer, Download, Loader2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
-import { useGlobalContext } from '@/components/context/GlobalContext'
+import { useGlobalContext } from '@/context/GlobalContext'
 import { useState } from 'react'
 
 interface ReportActionsProps {

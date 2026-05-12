@@ -1,6 +1,6 @@
 'use client'
 
-import { useGlobalContext } from '@/components/context/GlobalContext'
+import { useGlobalContext } from '@/context/GlobalContext'
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 

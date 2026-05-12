@@ -1,8 +1,8 @@
 'use client'
 
 import { useEffect, useState, useTransition } from 'react'
-import { createLeaveRequest, getLeaveTypes } from '@/app/actions/leaves'
-import type { LeaveType } from '@/src/types/leave'
+import { createLeaveRequest, getLeaveTypes } from '../../../actions/leaves'
+import type { LeaveType } from '@/types/leave'
 
 interface NewLeaveRequestModalProps {
   onClose: () => void
