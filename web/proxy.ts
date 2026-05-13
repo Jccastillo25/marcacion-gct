@@ -24,7 +24,7 @@ const PROTECTED_PREFIXES = [
 // Rutas de autenticación (redirigir si ya está autenticado)
 const AUTH_ROUTES = ['/login']
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   let supabaseResponse = NextResponse.next({ request })
