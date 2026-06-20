@@ -4,6 +4,11 @@ import { NextResponse } from 'next/server'
 export async function GET() {
   const supabase = await createClient()
 
+  const { data: { user }, error: authErr } = await supabase.auth.getUser()
+  if (authErr || !user) {
+    return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+  }
+
   const { data: shifts, error } = await supabase
     .from('shift_templates')
     .select('*')

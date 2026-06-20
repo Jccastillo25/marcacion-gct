@@ -224,17 +224,20 @@ export async function registerAbsence(employeeId: string, reason: string, notes:
 }
 
 export async function endAbsence(employeeId: string): Promise<{ success?: boolean, error?: string }> {
+  const perm = await requirePermission('can_manage_attendance')
+  if (!perm.ok) return { error: perm.error }
+
   const supabase = await createClient()
   const now = new Date()
 
-  // Update employee status
   await supabase
     .from('employees')
-    .update({ 
+    .update({
       current_status: 'offline',
       last_status_change: now.toISOString()
     })
     .eq('id', employeeId)
+    .eq('company_id', perm.companyId)
 
   revalidatePath('/monitor')
   return { success: true }

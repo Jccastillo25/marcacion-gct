@@ -44,11 +44,13 @@ export async function POST(request: NextRequest) {
     const token = authHeader.substring(7);
     let decoded: any;
 
+    const jwtSecret = process.env.JWT_SECRET;
+    if (!jwtSecret) {
+      return NextResponse.json({ error: "Error de configuración del servidor" }, { status: 500 });
+    }
+
     try {
-      decoded = jwt.verify(
-        token,
-        process.env.JWT_SECRET || "secret-key-change-me"
-      );
+      decoded = jwt.verify(token, jwtSecret, { algorithms: ["HS256"] });
     } catch {
       return NextResponse.json(
         { error: "Token inválido" },
@@ -127,7 +129,7 @@ export async function POST(request: NextRequest) {
           id: userId,
           aud: "authenticated",
         },
-        process.env.JWT_SECRET || "secret-key-change-me",
+        jwtSecret,
         { expiresIn: "8h" }
       );
 

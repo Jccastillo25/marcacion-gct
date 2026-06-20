@@ -23,11 +23,12 @@ export async function validateSession(
   try {
     // Decodificar JWT
     let decoded: any;
+    const jwtSecret = process.env.JWT_SECRET;
+    if (!jwtSecret) {
+      return { valid: false, error: "Error de configuración del servidor" };
+    }
     try {
-      decoded = jwt.verify(
-        token,
-        process.env.JWT_SECRET || "secret-key-change-me"
-      );
+      decoded = jwt.verify(token, jwtSecret, { algorithms: ["HS256"] });
     } catch (error) {
       return { valid: false, error: "Token inválido o expirado" };
     }

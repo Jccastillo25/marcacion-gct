@@ -191,12 +191,15 @@ export async function updateContract(
 }
 
 export async function markContractAsPrinted(id: string): Promise<{ error?: string }> {
+  const perm = await requirePermission('can_manage_contracts')
+  if (!perm.ok) return { error: perm.error }
+
   const supabase = await createClient()
   const { error } = await supabase
     .from('contracts')
     .update({ is_printed: true })
     .eq('id', id)
-  
+
   if (error) return { error: error.message }
   revalidatePath('/contracts')
   return {}
@@ -239,6 +242,9 @@ export async function deleteContract(id: string): Promise<{ error?: string }> {
 }
 
 export async function uploadSignedContract(id: string, formData: FormData): Promise<{ error?: string, url?: string }> {
+  const perm = await requirePermission('can_manage_contracts')
+  if (!perm.ok) return { error: perm.error }
+
   const supabase = await createClient()
   
   const file = formData.get('file') as File
@@ -271,6 +277,9 @@ export async function uploadSignedContract(id: string, formData: FormData): Prom
 }
 
 export async function createTemplate(name: string, content: string): Promise<{ error?: string }> {
+  const perm = await requirePermission('can_manage_contracts')
+  if (!perm.ok) return { error: perm.error }
+
   const supabase = await createClient()
   const { error } = await supabase
     .from('contract_templates')

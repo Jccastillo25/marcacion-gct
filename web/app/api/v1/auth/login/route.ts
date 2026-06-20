@@ -157,13 +157,18 @@ export async function POST(request: NextRequest) {
       Date.now() + config.maxSessionDurationMinutes * 60 * 1000
     );
 
+    const jwtSecret = process.env.JWT_SECRET;
+    if (!jwtSecret) {
+      return NextResponse.json({ error: "Error de configuración del servidor" }, { status: 500 });
+    }
+
     const token = jwt.sign(
       {
         id: userId,
         email: user.email,
         aud: "authenticated",
       },
-      process.env.JWT_SECRET || "secret-key-change-me",
+      jwtSecret,
       { expiresIn: "8h" }
     );
 

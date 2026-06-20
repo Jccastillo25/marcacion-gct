@@ -2,6 +2,7 @@
 
 import { createClient as createServerClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { requirePermission } from '@/lib/auth/require-permission'
 
 interface CreateUserInput {
   email: string
@@ -144,59 +145,42 @@ export async function createUserWithMemberships(input: CreateUserInput) {
  * Si se proporciona companyId, filtra usuarios que pertenecen a esa empresa
  */
 export async function getUsers(companyId?: string) {
+  const perm = await requirePermission('can_manage_users')
+  if (!perm.ok) return { success: false, data: null, error: perm.error }
+
+  const targetCompanyId = companyId ?? perm.companyId
   const supabase = await createServerClient()
 
   try {
-    if (companyId) {
-      // Obtener usuarios que pertenecen a una empresa específica mediante company_memberships
-      const { data, error } = await supabase
-        .from('company_memberships')
-        .select(`
-          profile_id,
-          role,
-          profiles(
-            id,
-            full_name,
-            email,
-            company_id,
-            linked_employee_id,
-            created_at
-          )
-        `)
-        .eq('company_id', companyId)
-
-      if (error) throw error
-
-      // Mapear resultado para que sea compatible con el formato esperado
-      const formattedData = data?.map(membership => ({
-        ...membership.profiles,
-        company_memberships: [
-          {
-            role: membership.role,
-            company_id: companyId,
-          },
-        ],
-      })) || []
-
-      return { success: true, data: formattedData, error: null }
-    } else {
-      // Obtener todos los usuarios sin filtrar por empresa
-      const { data, error } = await supabase
-        .from('profiles')
-        .select(`
+    const { data, error } = await supabase
+      .from('company_memberships')
+      .select(`
+        profile_id,
+        role,
+        profiles(
           id,
           full_name,
           email,
           company_id,
           linked_employee_id,
-          company_memberships(role, company_id),
           created_at
-        `)
+        )
+      `)
+      .eq('company_id', targetCompanyId)
 
-      if (error) throw error
+    if (error) throw error
 
-      return { success: true, data, error: null }
-    }
+    const formattedData = data?.map(membership => ({
+      ...membership.profiles,
+      company_memberships: [
+        {
+          role: membership.role,
+          company_id: targetCompanyId,
+        },
+      ],
+    })) || []
+
+    return { success: true, data: formattedData, error: null }
   } catch (error: any) {
     console.error('getUsers error:', error)
     return { success: false, data: null, error: error.message }
@@ -216,13 +200,12 @@ export async function updateUser(
     primaryCompanyId?: string
   }
 ) {
+  const perm = await requirePermission('can_manage_users')
+  if (!perm.ok) throw new Error(perm.error)
+
   const supabase = await createServerClient()
 
   try {
-    // Validar permisos (owner/admin)
-    const { data: { user: currentUser } } = await supabase.auth.getUser()
-    if (!currentUser) throw new Error('No autenticado')
-
     // Verificar que el usuario que se va a actualizar existe
     const { data: targetUser, error: fetchError } = await supabase
       .from('profiles')
@@ -296,7 +279,7 @@ export async function updateUser(
           action: 'UPDATE',
           old_values: null,
           new_values: updates,
-          changed_by: currentUser.id,
+          changed_by: perm.userId,
         })
     } catch (err) {
       console.warn('Audit log failed:', err)

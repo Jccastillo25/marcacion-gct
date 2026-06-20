@@ -2,8 +2,12 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
+import { requirePermission } from '@/lib/auth/require-permission'
 
 export async function resetEmployeePin(employeeId: string) {
+  const perm = await requirePermission('can_manage_employees')
+  if (!perm.ok) return { error: perm.error }
+
   const supabase = await createClient()
 
   // Obtener company_id del empleado
